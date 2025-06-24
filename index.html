@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vòng Quay May Mắn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Thay thế font 'Luckiest Guy' bằng 'Paytone One' để hỗ trợ tiếng Việt -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&family=Paytone+One&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+        h1 {
+            /* Sử dụng font Paytone One mới */
+            font-family: 'Paytone One', sans-serif;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        #wheel {
+            transition: transform 7s cubic-bezier(0.25, 0.1, 0.25, 1);
+            filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.15));
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        input[type=number] { -moz-appearance: textfield; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .slide-toggle.hidden, #resultModal.hidden { display: none; }
+        .slide-toggle { transition: all 0.3s ease-in-out; overflow: hidden; }
+        #resultModal .modal-content { transition: transform 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex flex-col items-center justify-center min-h-screen p-4 text-gray-800 dark:text-gray-200">
+
+    <div class="w-full max-w-lg mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8">
+        <h1 id="mainTitle" class="text-4xl md:text-5xl font-bold text-center mb-6 text-gray-800 dark:text-white">Vòng Quay May Mắn</h1>
+        
+        <div class="relative w-full max-w-sm mx-auto mb-24 flex items-center justify-center">
+            
+            <div class="absolute -top-1 left-1/2 -translate-x-1/2 z-10" style="filter: drop-shadow(0 4px 3px rgba(0,0,0,0.3));">
+                 <svg width="40" height="55" viewBox="0 0 40 55">
+                    <path d="M20 0 L40 25 L20 55 L0 25 Z" fill="#facc15"></path>
+                    <path d="M20 5 L35 25 L20 45 L5 25 Z" fill="#f59e0b"></path>
+                    <circle cx="20" cy="25" r="7" fill="white"></circle>
+                    <circle cx="20" cy="25" r="4" fill="#f59e0b"></circle>
+                </svg>
+            </div>
+
+            <canvas id="wheel" width="384" height="384" class="rounded-full border-8 border-white dark:border-gray-700"></canvas>
+
+            <div class="absolute -bottom-16 left-1/2 -translate-x-1/2">
+                <div class="w-24 h-16 bg-gray-700 dark:bg-gray-600 rounded-t-lg" style="clip-path: polygon(15% 0, 85% 0, 100% 100%, 0% 100%)"></div>
+                <div class="w-32 h-5 bg-gray-800 dark:bg-gray-700 rounded-b-lg -mt-1 shadow-inner"></div>
+            </div>
+        </div>
+
+        <div class="w-full px-4">
+            <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+                <button id="spinBtn" class="w-full md:w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-xl shadow-lg transform hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800">
+                    Quay!
+                </button>
+                <button id="resetBtn" class="w-full md:w-1/3 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-xl shadow-lg transform hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-800">
+                    Reset
+                </button>
+            </div>
+            <div id="result" class="text-xl font-bold text-center h-10 p-2 mt-4 text-gray-500"></div>
+        </div>
+
+        <div id="customizationSection" class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6 slide-toggle hidden">
+            <h2 class="text-xl font-semibold mb-4 text-center text-gray-700 dark:text-gray-300">Tùy Chỉnh</h2>
+            
+             <div class="mb-4 px-2">
+                <label for="titleInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tiêu đề Vòng quay</label>
+                <input type="text" id="titleInput" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none" value="Vòng Quay May Mắn">
+            </div>
+
+            <div class="flex items-center justify-center mb-4">
+                <input type="checkbox" id="uniqueWinsCheckbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" checked>
+                <label for="uniqueWinsCheckbox" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                    Loại bỏ ô đã trúng?
+                </label>
+            </div>
+            
+            <h3 class="text-lg font-semibold mb-2 text-center text-gray-700 dark:text-gray-300">Các Lựa Chọn & Tỷ Lệ</h3>
+            <div id="optionsEditor" class="space-y-3 max-h-48 overflow-y-auto pr-2"></div>
+            <button id="addOptionBtn" class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800">
+                Thêm Lựa Chọn
+            </button>
+        </div>
+
+        <div class="text-center mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+             <button id="toggleEditorBtn" class="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold py-2 px-4 rounded-lg">
+                Tùy Chỉnh
+            </button>
+        </div>
+    </div>
+
+    <div id="resultModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 hidden">
+        <div id="modalContent" class="modal-content bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-2xl p-8 text-center transform scale-95">
+            <h2 class="text-2xl font-bold mb-4 text-gray-700 dark:text-gray-300">Chúc Mừng!</h2>
+            <p id="modalResultText" class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 mb-6"></p>
+            <button id="closeModalBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded-lg">Đóng</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wheel');
+        const spinBtn = document.getElementById('spinBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultDiv = document.getElementById('result');
+        const optionsEditor = document.getElementById('optionsEditor');
+        const addOptionBtn = document.getElementById('addOptionBtn');
+        const toggleEditorBtn = document.getElementById('toggleEditorBtn');
+        const customizationSection = document.getElementById('customizationSection');
+        const uniqueWinsCheckbox = document.getElementById('uniqueWinsCheckbox');
+        const mainTitle = document.getElementById('mainTitle');
+        const titleInput = document.getElementById('titleInput');
+        const ctx = canvas.getContext('2d');
+        const resultModal = document.getElementById('resultModal');
+        const modalContent = document.getElementById('modalContent');
+        const modalResultText = document.getElementById('modalResultText');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const spinAnimationTime = 7000;
+
+        let audioContext;
+        let tickTimeoutId;
+        let isAudioInitialized = false;
+
+        function initAudio() {
+            if (isAudioInitialized) return;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            isAudioInitialized = true;
+        }
+
+        function playTick() {
+            if (!audioContext) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function startTicking(duration) {
+            const startTime = Date.now();
+            function schedule() {
+                const elapsedTime = Date.now() - startTime;
+                if (elapsedTime >= duration - 200) { clearTimeout(tickTimeoutId); return; }
+                playTick();
+                const minDelay = 70;
+                const maxDelay = 700;
+                const progress = elapsedTime / duration;
+                const currentDelay = minDelay + (maxDelay - minDelay) * Math.pow(progress, 2);
+                tickTimeoutId = setTimeout(schedule, currentDelay);
+            }
+            schedule();
+        }
+
+        function playWinSound() {
+            if (!audioContext) return;
+            const notes = [261.63, 329.63, 392.00, 523.25];
+            notes.forEach((note, i) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(note, audioContext.currentTime + i * 0.1);
+                gainNode.gain.setValueAtTime(0.5, audioContext.currentTime + i * 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.2);
+                oscillator.start(audioContext.currentTime + i * 0.1);
+                oscillator.stop(audioContext.currentTime + i * 0.1 + 0.2);
+            });
+        }
+       
+        let options = [
+            { text: 'Giải Nhất', available: true, weight: 1 }, { text: 'Chúc may mắn', available: true, weight: 5 },
+            { text: 'Thêm lượt', available: true, weight: 2 }, { text: 'Giải Nhì', available: true, weight: 2 },
+            { text: 'Mất lượt', available: true, weight: 3 }, { text: 'Giải Ba', available: true, weight: 3 },
+            { text: 'Thưởng nhỏ', available: true, weight: 4 }, { text: 'Gấp đôi điểm', available: true, weight: 1 }
+        ];
+        
+        const colors = [ "#3b82f6", "#10b981", "#ef4444", "#eab308", "#8b5cf6", "#ec4899", "#f97316", "#14b8a6", "#6366f1", "#d946ef", "#06b6d4", "#f59e0b" ];
+        const dimmedColor = '#9ca3af';
+        let currentRotationDegrees = 0;
+
+        function drawWheel() {
+            const numOptions = options.length;
+            if (numOptions === 0) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; };
+            const arcSize = 2 * Math.PI / numOptions;
+            const radius = canvas.width / 2;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(radius, radius);
+            for (let i = 0; i < numOptions; i++) {
+                const option = options[i];
+                const angle = i * arcSize;
+                ctx.beginPath();
+                ctx.arc(0, 0, radius - 10, angle, angle + arcSize, false); // Adjusted radius for padding
+                ctx.arc(0, 0, 0, angle + arcSize, angle, true);
+                ctx.fillStyle = option.available ? colors[i % colors.length] : dimmedColor;
+                ctx.fill();
+                ctx.save();
+                ctx.fillStyle = option.available ? 'white' : '#e5e7eb';
+                ctx.font = 'bold 16px Be Vietnam Pro';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const textAngle = angle + arcSize / 2;
+                ctx.rotate(textAngle);
+                const text = option.text;
+                let shortenedText = text;
+                if (ctx.measureText(text).width > radius * 0.65) { shortenedText = text.substring(0, 10) + '...'; }
+                ctx.fillText(shortenedText, radius * 0.6, 0);
+                ctx.restore();
+            }
+            // Central hub
+            ctx.beginPath();
+            ctx.arc(0, 0, 25, 0, 2*Math.PI);
+            ctx.fillStyle = 'white';
+            ctx.shadowColor = 'rgba(0,0,0,0.2)';
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(0,0,8,0,2*Math.PI);
+            ctx.fillStyle = '#d1d5db';
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function renderOptionsEditor() {
+            optionsEditor.innerHTML = ''; 
+            options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'flex items-center space-x-2';
+                const textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.value = option.text;
+                textInput.className = 'flex-grow w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none';
+                textInput.addEventListener('change', (e) => { options[index].text = e.target.value.trim() === '' ? 'Ô trống' : e.target.value; drawWheel(); });
+                const weightLabel = document.createElement('label');
+                weightLabel.textContent = 'Tỷ lệ:';
+                weightLabel.className = 'text-sm text-gray-600 dark:text-gray-400';
+                const weightInput = document.createElement('input');
+                weightInput.type = 'number';
+                weightInput.value = option.weight;
+                weightInput.min = "1";
+                weightInput.className = 'w-16 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none';
+                weightInput.addEventListener('change', (e) => { const newWeight = parseInt(e.target.value, 10); options[index].weight = newWeight > 0 ? newWeight : 1; });
+                const removeBtn = document.createElement('button');
+                // Thay thế emoji bằng SVG để có thể đổi màu
+                removeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1h-11z"/></svg>`;
+                removeBtn.className = 'p-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md flex items-center justify-center';
+                removeBtn.addEventListener('click', () => {
+                     if (options.length <= 2) {
+                        resultDiv.textContent = 'Cần ít nhất 2 lựa chọn.';
+                        setTimeout(() => { if (resultDiv.textContent === 'Cần ít nhất 2 lựa chọn.') resultDiv.textContent = ''}, 3000);
+                        return;
+                    }
+                    options.splice(index, 1);
+                    renderOptionsEditor(); 
+                    drawWheel(); 
+                });
+                optionDiv.appendChild(textInput); optionDiv.appendChild(weightLabel); optionDiv.appendChild(weightInput); optionDiv.appendChild(removeBtn);
+                optionsEditor.appendChild(optionDiv);
+            });
+        }
+        
+        function addOption() {
+            options.push({ text: 'Lựa chọn mới', available: true, weight: 1 });
+            renderOptionsEditor();
+            drawWheel();
+        }
+
+        function resetWheel() {
+            if(tickTimeoutId) clearTimeout(tickTimeoutId);
+            resultDiv.textContent = 'Đã reset vòng quay!';
+            options.forEach(opt => opt.available = true);
+            spinBtn.disabled = false;
+            drawWheel();
+            setTimeout(() => resultDiv.textContent = '', 2000);
+        }
+
+        function getWeightedWinner(availableOpts) {
+            const totalWeight = availableOpts.reduce((sum, opt) => sum + opt.weight, 0);
+            let randomNum = Math.random() * totalWeight;
+            for (const opt of availableOpts) {
+                randomNum -= opt.weight;
+                if (randomNum <= 0) return opt;
+            }
+            return availableOpts[availableOpts.length - 1]; 
+        }
+
+        function showWinner(winner) {
+            playWinSound();
+            modalResultText.textContent = winner.text;
+            resultModal.classList.remove('hidden');
+            setTimeout(() => modalContent.classList.add('scale-100'), 10); 
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+                const particleCount = 50 * (timeLeft / duration);
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+            }, 250);
+        }
+
+        function spin() {
+            initAudio(); 
+            const uniqueWinsEnabled = uniqueWinsCheckbox.checked;
+
+            const availableOptions = uniqueWinsEnabled
+                ? options.map((opt, i) => ({ ...opt, originalIndex: i })).filter(opt => opt.available)
+                : options.map((opt, i) => ({ ...opt, originalIndex: i }));
+
+            if (availableOptions.length === 0) { 
+                resultDiv.textContent = 'Đã quay hết! Reset lại...'; 
+                setTimeout(resetWheel, 2000); 
+                return; 
+            }
+            if (uniqueWinsEnabled && availableOptions.length === 1) {
+                 showWinner(availableOptions[0]);
+                 options[availableOptions[0].originalIndex].available = false;
+                 drawWheel();
+                 return;
+            }
+
+            spinBtn.disabled = true;
+            resultDiv.textContent = 'Đang quay...';
+            startTicking(spinAnimationTime);
+            
+            const winnerData = getWeightedWinner(availableOptions);
+            const winningIndex = winnerData.originalIndex;
+            const numOptions = options.length;
+            const arcSizeDegrees = 360 / numOptions;
+            const segmentCenterDegrees = (winningIndex * arcSizeDegrees) + (arcSizeDegrees / 2);
+            const desiredStopAngle = 270 - segmentCenterDegrees;
+            const randomRotations = (Math.floor(Math.random() * 5) + 8) * 360;
+            currentRotationDegrees = Math.ceil(currentRotationDegrees / 360) * 360 + randomRotations + desiredStopAngle;
+            canvas.style.transform = `rotate(${currentRotationDegrees}deg)`;
+
+            setTimeout(() => {
+                clearTimeout(tickTimeoutId);
+                
+                if (uniqueWinsEnabled) {
+                    options[winningIndex].available = false;
+                }
+
+                resultDiv.textContent = '';
+                showWinner(winnerData);
+                drawWheel();
+                
+                if (uniqueWinsEnabled) {
+                    const allSpun = options.every(opt => !opt.available);
+                    if (allSpun) {
+                        setTimeout(() => {
+                            resultDiv.textContent = 'Đã quay hết! Sẽ reset...';
+                            setTimeout(resetWheel, 2500);
+                        }, 3000);
+                    } else {
+                        spinBtn.disabled = false;
+                    }
+                } else {
+                    spinBtn.disabled = false;
+                }
+            }, spinAnimationTime); 
+        }
+
+        function closeModal() {
+            modalContent.classList.remove('scale-100');
+            setTimeout(() => resultModal.classList.add('hidden'), 300);
+        }
+
+        titleInput.addEventListener('input', (e) => {
+            mainTitle.textContent = e.target.value.trim() === '' ? 'Vòng Quay May Mắn' : e.target.value;
+        });
+
+        spinBtn.addEventListener('click', spin);
+        resetBtn.addEventListener('click', resetWheel);
+        addOptionBtn.addEventListener('click', addOption);
+        toggleEditorBtn.addEventListener('click', () => customizationSection.classList.toggle('hidden'));
+        closeModalBtn.addEventListener('click', closeModal);
+        window.addEventListener('load', () => { 
+            renderOptionsEditor(); 
+            drawWheel(); 
+        });
+    </script>
+</body>
+</html>
